@@ -11,18 +11,28 @@
 1. [If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?](README.md#If-you-could-find-another-data-set-that-would-complement-this-one-to-help-answer-the-above-or-similar-questions,-what-dataset-might-be-ideal?)
 
 
-#### Introduction
+### Introduction
 This repository analyzes records of Purchase Order data made publicly available by California state.
 
-#### What is the structure of the data in the data set?
+### What is the structure of the data in the data set?
 The dataset contains
 - It contains 346018 rows of purchase orders with 31 columns. 
 - The datatypes of all columns, as inferred by Pandas, is either object or float64.
 
 ```python
 df.columns
+
+Index(['Creation Date', 'Purchase Date', 'Fiscal Year', 'LPA Number',
+       'Purchase Order Number', 'Requisition Number', 'Acquisition Type',
+       'Sub-Acquisition Type', 'Acquisition Method', 'Sub-Acquisition Method',
+       'Department Name', 'Supplier Code', 'Supplier Name',
+       'Supplier Qualifications', 'Supplier Zip Code', 'CalCard', 'Item Name',
+       'Item Description', 'Quantity', 'Unit Price', 'Total Price',
+       'Classification Codes', 'Normalized UNSPSC', 'Commodity Title', 'Class',
+       'Class Title', 'Family', 'Family Title', 'Segment', 'Segment Title',
+       'Location'],
+      dtype='object')
 ```
-<center><img src="img/columns.png" align="middle" style="width: 400px; height: 150px" /></center><br>
 
 - Some of the inferred datatypes (e.g. for *Unit Price* and *Total Price* columns) are incorrect, so they need to be converted to the appropriate data type before we can start analyzing the data.
 
@@ -31,7 +41,7 @@ df["Total Price Numeric"] = df["Total Price"].apply(to_float)
 df["Unit Price Numeric"] = df["Unit Price"].apply(to_float)
 ```
 
-#### Do any columns in the data set make the most sense to be encoded into labels for better statistical analysis?
+### Do any columns in the data set make the most sense to be encoded into labels for better statistical analysis?
 
 Nominal and ordinal data types can be encoded into labels for better statistical analysis and model building.
 
@@ -39,9 +49,17 @@ For example, the *Acquisition Method* is a nominal data with the following uniqu
 
 ```python
 df["Acquisition Method"].unique()
-```
 
-<center><img src="img/acquisition-method.png" align="middle" style="width: 400px; height: 150px" /></center><br>
+array(['WSCA/Coop', 'Informal Competitive', 'Statewide Contract',
+       'Services are specifically exempt by statute', 'SB/DVBE Option',
+       'NCB', 'Formal Competitive', 'Fair and Reasonable',
+       'State Programs', 'Services are specifically exempt by policy',
+       'CMAS', 'LCB', 'Master Purchase/Price Agreement',
+       'Master Service Agreement', 'Emergency Purchase', 'CRP',
+       'Software License Program', 'Special Category Request (SCR)',
+       'Statement of Qualifications', 'State Price Schedule'],
+      dtype=object)
+```
 
 Let us create a simple bar plot of aggregate *Total Spend* per *Acuisition Method*
 
@@ -59,36 +77,95 @@ spend_by_aq_method.plot.bar(x="Acquisition Method", y="total_spend")
 
 The above plot shows most of the purchases are done under the "Informal Competitive", "Services are specifically exempt by statute", "Formal Competitive", and "Services are specifically exempt by policy" acquisition methods respectively.
 
-However, the plot looks busy and is hard to read. Encoding the acquisition method makes it cleaner.
+However, the plot looks busy and is hard to read. Label encoding the acquisition method makes it cleaner. Moreover, we may need to dummy-encode categorical columns like this in order to use them as features in model building.
 
 Other columns that may benefit from label encoding:
 - Acquisition Type
 - Sub-Acquisition Type
 - Sub-Acquisition Method
 
-#### Are there any obvious outliers or invalid/empty values in the labeled data set?
+### Are there any obvious outliers or invalid/empty values in the labeled data set?
 
 Most of the columns have missing values. Most notably, the *Requisition Number* and *Sub-Acquisition Method* columns have 331649 (95.8% of the rows) and 315122 (91%) missing values
 
 If we label-encode the *Sub-Acquisition Method* Column, there will be 315122 **invalid** codes with value -1, which corresponds to the NULL values in the column
 
-<center><img src="img/sub-aq-category.png" align="middle" style="width: 400px; height: 300px" /></center><br>
+```python
+sub_aq_cat = df["Sub-Acquisition Method"].astype("category")
+sub_aq_cat.cat.codes.value_counts()
 
-#### What are the most expensive parts? What is the price distribution?
+-1     315122
+ 3      14148
+ 10     11602
+ 8       1810
+ 7        812
+ 4        565
+ 12       521
+ 9        503
+ 2        334
+ 0        328
+ 1        117
+ 11        83
+ 13        28
+ 5         18
+ 6         15
+ 15        10
+ 14         2
+```
+
+### What are the most expensive parts? What is the price distribution?
 
 The top ten most expensive items are
 
 ```python
 df.loc[df["Unit Price"].notna(), ["Item Name", "Unit Price Numeric"]]\
   .sort_values("Unit Price Numeric", ascending=False).head(10)
+
+        Item Name	        Unit Price Numeric
+8790	Personal Service    $7,337,038,064.0
+304848	04-36069 A10        $3,194,190,000.0
+292165	Direct Service	    $3,010,052,803.0
+314966	03-76182 A15	    $2,474,118,000.0
+280645	03-76182 A18	    $2,253,227,000.0
+48484	11-10019 A02	    $2,200,000,000.0
+242591	Direct Service	    $1,979,109,000.0
+339157	12-89334            $1,949,122,000.0
+38396	04-35401 A14	    $1,948,168,000.0
+212412	04-36069 A09	    $1,877,260,000.0
 ```
-
+<!---
 <center><img src="img/top-10-expensive.png" align="middle" style="width: 200px; height: 200px" /></center><br>
-
+--->
 Two things become obvious from the price distribution
 
-<center><img src="img/describe-price.png" align="middle" style="width: 300px; height: 300px" /></center><br>
+```python
+print(df["Unit Price Numeric"].describe())
+print("")
+print(df["Total Price Numeric"].describe())
 
+count    3.459880e+05
+mean     4.326651e+05
+std      2.136461e+07
+min     -3.086123e+07
+25%      3.468000e+01
+50%      5.506650e+02
+75%      1.019935e+04
+max      7.337038e+09
+Name: Unit Price Numeric, dtype: float64
+
+count    3.459880e+05
+mean     4.371353e+05
+std      2.136468e+07
+min     -3.086123e+07
+25%      3.000000e+02
+50%      3.600000e+03
+75%      1.481420e+04
+max      7.337038e+09
+Name: Total Price Numeric, dtype: float64
+```
+<!---
+<center><img src="img/describe-price.png" align="middle" style="width: 300px; height: 300px" /></center><br>
+--->
 1. there are some *invalid* values in the *Unit Price Numeric* & *Total Price Numeric* columns since prices cannot be negative.
 
 ```python
@@ -119,7 +196,7 @@ total_price_hist.set_xlabel("Total Price ($)")
 
 About half of the purchases are cheaper than $5000 dollars, and about 90\% of the purchases are less than $100,000
 
-#### How has Purchase Order spend been trending over time?
+### How has Purchase Order spend been trending over time?
 
 ```python
 df["Creation Year"] = pd.to_datetime(df["Creation Date"]).dt.to_period('Y')
@@ -131,21 +208,35 @@ spend_trend = df[valid_price].groupby("Creation Year", as_index=False).agg(Spend
 
 In general, the spending trend over the years has been growing. The spike in 2013 is the result of a few high-dollar spends whose actual purchase date backdates the creation date.
 
-#### Which departments are spending the most money?
+### Which departments are spending the most money?
 
 The top 10 departments that are spending the most money are
 ```python
 spend_per_dept = df.groupby("Department Name", as_index=False).agg(num_of_purchases=("Total Price Numeric","count"), total_spend=("Total Price Numeric","sum")).sort_values("total_spend", ascending=False)
 spend_per_dept["pct_of_total"] = spend_per_dept["total_spend"].apply(lambda x: round(100 *(x/spend_per_dept["total_spend"].sum()),2))
 spend_per_dept.head(10)
+
+    Department Name                                 num_of_purchases    total_spend	pct_of_total
+56  Health Care Services, Department of             2862                $99,759,350,736	65.96
+81  Public Health, Department of                    4091                $5,621,707,894	3.72
+92  Social Services, Department of                  2323                $5,565,328,198	3.68
+31  Corrections and Rehabilitation, Department of   57537               $4,711,857,451	3.12
+93  State Hospitals, Department of                  18968               $4,545,650,046	3.01
+105 Transportation, Department of                   17644               $4,347,882,800	2.87
+57  High Speed Rail Authority, California           489                 $3,565,361,682	2.36
+110 Water Resources, Department of                  28331               $2,790,266,201	1.84
+30  Correctional Health Care Services               32220               $2,641,173,668	1.75
+38  Employment Development Department	            3412                $1,724,960,851	1.14
 ```
+<!--- 
 <center><img src="img/spend-by-dept.png" align="middle" style="width: 400px; height: 200px" /></center><br>
+--->
 
 About 66% of the spending comes from the Department of Health Care Services.
 Departments of Public Health and Social Services are distant second and third, 
 each of them spending about 3.7% of the total.
 
-#### Which zip code has the most supplier concentration? Any idea why?
+### Which zip code has the most supplier concentration? Any idea why?
 
 Zip Code 95691 has the most supplier concentration with  11095 (around 4%) of the purchases originating from that zip code.
 
@@ -204,7 +295,7 @@ Name: Acquisition Method, dtype: int64
 
 9267 (more than 98%) of the purchases made from *Grainger Industrial Supply* are of type *WSCA/Coop* Acquisition Method.
 
-#### What are the top UNSPSC categories? 
+### What are the top UNSPSC categories? 
 
 Assumptions: 
 1. I assume that "UNSPSC categories" corresponds to the "Family Title" column 
@@ -230,6 +321,6 @@ top_unspsc.head(10)
 0	Accommodation furniture	                            5177	$80,508,132
 ```
 
-#### If you could spend another day cleaning up the data to make it more useful what might you do?
+### If you could spend another day cleaning up the data to make it more useful what might you do?
 
-#### If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?
+### If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?
