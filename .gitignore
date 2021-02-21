@@ -152,3 +152,4 @@ nohup*
 
 # terraform
 fm-challenge/*
+data/*
