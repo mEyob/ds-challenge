@@ -9,7 +9,7 @@
 1. [What are the top UNSPSC categories?](README.md#What-are-the-top-UNSPSC-categories?)
 1. [If you could spend another day cleaning up the data to make it more useful what might you do?](README.md#If-you-could-spend-another-day-cleaning-up-the-data-to-make-it-more-useful-what-might-you-do?)
 1. [If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?](README.md#If-you-could-find-another-data-set-that-would-complement-this-one-to-help-answer-the-above-or-similar-questions,-what-dataset-might-be-ideal?)
-
+1. [Future work](README.md#Future-work)
 
 ### Introduction
 This repository analyzes a collection of publicly available records of Purchase Order data from the state of California.
@@ -137,6 +137,7 @@ sub_aq_cat.cat.codes.value_counts()
 ```
 
 ### What are the most expensive parts? What is the price distribution?
+> **Assumption**: I assumed that "parts" in this question refers to the item being purchased described by the *Item Name* column.
 
 The top ten most expensive items are
 
@@ -263,7 +264,7 @@ Similarly, the purchase trend can be shown at a month-level, for example to chec
 
 ### Which departments are spending the most money?
 
-The top 10 departments by spending are:
+The top 10 departments by spend are:
 ```python
 spend_per_dept = df.groupby("Department Name", as_index=False).agg(num_of_purchases=("Total Price Numeric","count"), total_spend=("Total Price Numeric","sum")).sort_values("total_spend", ascending=False)
 spend_per_dept["pct_of_total"] = spend_per_dept["total_spend"].apply(lambda x: round(100 *(x/spend_per_dept["total_spend"].sum()),2))
@@ -387,4 +388,6 @@ top_unspsc.head(10)
 
 ### Future work
 
-- Fit a variety of probability distributions to the price column, and select the best fit
+- To better understand the price distribution, a variety of probability density functions (PDF) can be fitted to the price column to select the best fit
+
+- The trend of purchase order spend is discussed above at a year granularity level. A similar analysis can be done at month-level, e.g., to check for seasonality
