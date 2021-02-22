@@ -88,7 +88,7 @@ Other columns that may benefit from label encoding:
 
 Most of the columns have missing values. Most notably, the *Requisition Number* and *Sub-Acquisition Method* columns have 331649 (95.8% of the rows) and 315122 (91%) missing values
 
-If we label-encode the *Sub-Acquisition Method* Column, there will be 315122 **invalid** codes with value -1, which corresponds to the NULL values in the column
+If we label-encode the *Sub-Acquisition Method* Column, there will be 315122 **invalid** codes with value -1 representing the NULL values in that column
 
 ```python
 sub_aq_cat = df["Sub-Acquisition Method"].astype("category")
@@ -136,7 +136,7 @@ df.loc[df["Unit Price"].notna(), ["Item Name", "Unit Price Numeric"]]\
 <!---
 <center><img src="img/top-10-expensive.png" align="middle" style="width: 200px; height: 200px" /></center><br>
 --->
-Two things become obvious from the price distribution
+Two things become obvious from the following price distribution
 
 ```python
 print(df["Unit Price Numeric"].describe())
@@ -166,7 +166,7 @@ Name: Total Price Numeric, dtype: float64
 <!---
 <center><img src="img/describe-price.png" align="middle" style="width: 300px; height: 300px" /></center><br>
 --->
-1. there are some *invalid* values in the *Unit Price Numeric* & *Total Price Numeric* columns since prices cannot be negative.
+1. There are some *invalid* values in the *Unit Price Numeric* & *Total Price Numeric* columns since prices cannot be negative.
 
 ```python
 df.loc[df["Total Price Numeric"] < 0].shape
@@ -183,7 +183,9 @@ df[df["Total Price Numeric"] > 3*IQR].shape
 (45294, 35)
 ```
 
-If we cut-off the maximum price at $100,000, we'll get the following price distribution
+The distribution is heavily right-skewed and difficult to illustrate using histograms or box plots. 
+
+If we cut-off the maximum price at $100,000 (~92 percentile), prices will have the following distribution
 
 ```python
 expensive_items = df["Total Price Numeric"] > 1e5 # Roughly 92 percentile
