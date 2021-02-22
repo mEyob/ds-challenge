@@ -16,7 +16,12 @@ This repository analyzes a collection of publicly available records of Purchase 
 
 ### What is the structure of the data in the data set?
 - The dataset contains 346018 rows of purchase orders with 31 columns listed below.
+```python
+df.shape
 
+# Output
+(346018, 31)
+```
 ```python
 df.columns
 
@@ -90,7 +95,7 @@ spend_by_aq_method = df.groupby("Acquisition Method", as_index=False)\
 spend_by_aq_method.plot.bar(x="Acquisition Method", y="total_spend")
 ```
 
-<center><img src="img/spend-by-aq-method.png" align="middle" style="width: 300px; height: 400px" /></center><br>
+<center><img src="img/spend-by-aq-method.png" align="middle" style="width: 60%; height: 400px" /></center><br>
 
 The above plot shows most of the purchases are made using one of the *Informal Competitive*, *Services are specifically exempt by statute*, *Formal Competitive*, or *Services are specifically exempt by policy* acquisition methods.
 
@@ -254,6 +259,8 @@ spend_trend = df[valid_price].groupby("Creation Year", as_index=False).agg(Spend
 
 In general, the spending trend over the years has been growing. The spike in 2013 is the result of a few high-dollar spends whose actual purchase date backdates the creation date.
 
+Similarly, the purchase trend can be shown at a month-level, for example to check for seasonality.
+
 ### Which departments are spending the most money?
 
 The top 10 departments by spending are:
@@ -304,7 +311,7 @@ df["Supplier Zip Code"].value_counts()
 55044             1
 ```
 
-Let us check the suppliers located in zip code 95691 and how many purchases are made from them
+Let us check the suppliers located in zip code 95691 and the number of purchases completed from them
 
 ```python
 df.loc[df["Supplier Zip Code"] == '95691', "Supplier Name"].value_counts()
@@ -373,6 +380,8 @@ top_unspsc.head(10)
 ```
 
 ### If you could spend another day cleaning up the data to make it more useful what might you do?
+
+- Columns like the *Classification Code* and *Location* include the new line character ("\n") to separate a list of values. If those columns are to be analyzed, we need to remove the new line character and extract the actual values
 
 ### If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?
 
