@@ -12,16 +12,15 @@
 
 
 ### Introduction
-This repository analyzes records of Purchase Order data made publicly available by California state.
+This repository analyzes a collection of publicly available records of Purchase Order data from the state of California.
 
 ### What is the structure of the data in the data set?
-The dataset contains
-- It contains 346018 rows of purchase orders with 31 columns. 
-- The datatypes of all columns, as inferred by Pandas, is either object or float64.
+- The dataset contains 346018 rows of purchase orders with 31 columns listed below.
 
 ```python
 df.columns
 
+# Output
 Index(['Creation Date', 'Purchase Date', 'Fiscal Year', 'LPA Number',
        'Purchase Order Number', 'Requisition Number', 'Acquisition Type',
        'Sub-Acquisition Type', 'Acquisition Method', 'Sub-Acquisition Method',
@@ -33,7 +32,24 @@ Index(['Creation Date', 'Purchase Date', 'Fiscal Year', 'LPA Number',
        'Location'],
       dtype='object')
 ```
+- Some of the columns have missing values. For example, as shown below, the Purchase Date column has 17436 missing values.
 
+```python
+df.isna().sum()
+
+# Output
+Creation Date                      0
+Purchase Date                  17436
+Fiscal Year                        0
+LPA Number                    253673
+Purchase Order Number              0
+Requisition Number            331649
+Acquisition Type                   0
+Sub-Acquisition Type          277681
+Acquisition Method                 0
+Sub-Acquisition Method        315122
+                ...
+```
 - Some of the inferred datatypes (e.g. for *Unit Price* and *Total Price* columns) are incorrect, so they need to be converted to the appropriate data type before we can start analyzing the data.
 
 ```python
@@ -43,13 +59,14 @@ df["Unit Price Numeric"] = df["Unit Price"].apply(to_float)
 
 ### Do any columns in the data set make the most sense to be encoded into labels for better statistical analysis?
 
-Nominal and ordinal data types can be encoded into labels for better statistical analysis and model building.
+Categorical columns can be encoded into labels for better statistical analysis and model building.
 
 For example, the *Acquisition Method* is a nominal data with the following unique values
 
 ```python
 df["Acquisition Method"].unique()
 
+# Output
 array(['WSCA/Coop', 'Informal Competitive', 'Statewide Contract',
        'Services are specifically exempt by statute', 'SB/DVBE Option',
        'NCB', 'Formal Competitive', 'Fair and Reasonable',
@@ -61,7 +78,7 @@ array(['WSCA/Coop', 'Informal Competitive', 'Statewide Contract',
       dtype=object)
 ```
 
-Let us create a simple bar plot of aggregate *Total Spend* per *Acuisition Method*
+To motivate the need for label encoding this column, let us create a simple bar plot of aggregate *Total Spend* per *Acuisition Method*
 
 ```python
 spend_by_aq_method = df.groupby("Acquisition Method", as_index=False)\
@@ -75,7 +92,7 @@ spend_by_aq_method.plot.bar(x="Acquisition Method", y="total_spend")
 
 <center><img src="img/spend-by-aq-method.png" align="middle" style="width: 300px; height: 400px" /></center><br>
 
-The above plot shows most of the purchases are done under the "Informal Competitive", "Services are specifically exempt by statute", "Formal Competitive", and "Services are specifically exempt by policy" acquisition methods respectively.
+The above plot shows most of the purchases are made using one of the *Informal Competitive*, *Services are specifically exempt by statute*, *Formal Competitive*, or *Services are specifically exempt by policy* acquisition methods.
 
 However, the plot looks busy and is hard to read. Label encoding the acquisition method makes it cleaner. Moreover, we may need to dummy-encode categorical columns like this in order to use them as features in model building.
 
@@ -86,14 +103,15 @@ Other columns that may benefit from label encoding:
 
 ### Are there any obvious outliers or invalid/empty values in the labeled data set?
 
-Most of the columns have missing values. Most notably, the *Requisition Number* and *Sub-Acquisition Method* columns have 331649 (95.8% of the rows) and 315122 (91%) missing values
+Most of the columns have missing values. Most notably, the *Requisition Number* and *Sub-Acquisition Method* columns have 331649 (95.8% of the rows) and 315122 (91% of the rows) missing values, respectively.
 
-If we label-encode the *Sub-Acquisition Method* Column, there will be 315122 **invalid** codes with value -1 representing the NULL values in that column
+If we label-encode the *Sub-Acquisition Method* Column, there will be 315122 invalid codes (with value *-1*) representing the NULL values in that column. The following code snippet illustrates this.
 
 ```python
 sub_aq_cat = df["Sub-Acquisition Method"].astype("category")
 sub_aq_cat.cat.codes.value_counts()
 
+# Output
 -1     315122
  3      14148
  10     11602
@@ -121,6 +139,7 @@ The top ten most expensive items are
 df.loc[df["Unit Price"].notna(), ["Item Name", "Unit Price Numeric"]]\
   .sort_values("Unit Price Numeric", ascending=False).head(10)
 
+# Output
         Item Name	        Unit Price Numeric
 8790	Personal Service    $7,337,038,064.0
 304848	04-36069 A10        $3,194,190,000.0
@@ -136,6 +155,9 @@ df.loc[df["Unit Price"].notna(), ["Item Name", "Unit Price Numeric"]]\
 <!---
 <center><img src="img/top-10-expensive.png" align="middle" style="width: 200px; height: 200px" /></center><br>
 --->
+
+Most of these purchases originated from the Department of Health Care Services.
+
 Two things become obvious from the following price distribution
 
 ```python
@@ -143,6 +165,7 @@ print(df["Unit Price Numeric"].describe())
 print("")
 print(df["Total Price Numeric"].describe())
 
+# Output
 count    3.459880e+05
 mean     4.326651e+05
 std      2.136461e+07
@@ -174,7 +197,7 @@ df.loc[df["Total Price Numeric"] < 0].shape
 (1438, 35)
 ```
 
-2. It is also easy to see that there are outliers in these columns. The following cell illustrate this point
+2. It is also easy to see that few purchases of large dollar amount skew the distribution to the right. The following cell illustrate this point
 
 ```python
 IQR = df["Total Price Numeric"].quantile(0.75) - df["Total Price Numeric"].quantile(0.25) 
@@ -196,10 +219,30 @@ total_price_hist.set_xlabel("Total Price ($)")
 
 <center><img src="img/price-hist.png" align="middle" style="width: 300px; height: 200px" /></center><br>
 
-About half of the purchases are cheaper than $5000 dollars, and about 90\% of the purchases are less than $100,000
+About half of the purchases are cheaper than $5000 dollars, and the total prices of about 90\% of the purchases are less than $100,000.
+
+However, we cannot simply discard the few high-dollar purchases as outliers due to their high business value. The following code snippet illustrates this point. The top 1% purchase orders constitute about 92% of the total purchase order spend.
+
+```python
+q99 = df["Total Price Numeric"].quantile(0.99)
+valid_price = df["Total Price Numeric"] >= 0
+
+top1_pct = df.loc[df["Total Price Numeric"] > q99, "Total Price Numeric"].sum()
+total = df.loc[valid_price,"Total Price Numeric"].sum()
+
+print(f"${top1_pct:,.0f}")
+print(f"{100*top1_pct / total:.1f}%")
+
+# Output
+$139,002,878,107
+91.8%
+```
 
 ### How has Purchase Order spend been trending over time?
 
+>**Assumptions**: One critical assumption in this section is that the Creation Date is being used as a proxy for the actual Purchase Date because the Purchase Date column contains many null/invalid values. However, we should keep in mind that purchase order records are sometimes created on a later date than the actual purchase date.
+
+The following code snippet shows the spend trend over the years 2012 - 2015
 ```python
 df["Creation Year"] = pd.to_datetime(df["Creation Date"]).dt.to_period('Y')
 valid_price = df["Total Price Numeric"] >= 0
@@ -212,12 +255,13 @@ In general, the spending trend over the years has been growing. The spike in 201
 
 ### Which departments are spending the most money?
 
-The top 10 departments that are spending the most money are
+The top 10 departments by spending are:
 ```python
 spend_per_dept = df.groupby("Department Name", as_index=False).agg(num_of_purchases=("Total Price Numeric","count"), total_spend=("Total Price Numeric","sum")).sort_values("total_spend", ascending=False)
 spend_per_dept["pct_of_total"] = spend_per_dept["total_spend"].apply(lambda x: round(100 *(x/spend_per_dept["total_spend"].sum()),2))
 spend_per_dept.head(10)
 
+# Output
     Department Name                                 num_of_purchases    total_spend	pct_of_total
 56  Health Care Services, Department of             2862                $99,759,350,736	65.96
 81  Public Health, Department of                    4091                $5,621,707,894	3.72
@@ -234,7 +278,7 @@ spend_per_dept.head(10)
 <center><img src="img/spend-by-dept.png" align="middle" style="width: 400px; height: 200px" /></center><br>
 --->
 
-About 66% of the spending comes from the Department of Health Care Services.
+About 66% of the spending comes from the Department of Health Care Services, which has spent close to 100 billion dollars over 2862 purchase orders.
 Departments of Public Health and Social Services are distant second and third, 
 each of them spending about 3.7% of the total.
 
@@ -245,6 +289,7 @@ Zip Code 95691 has the most supplier concentration with  11095 (around 4%) of th
 ```python
 df["Supplier Zip Code"].value_counts()
 
+# Output
 95691         11095
 95814         10921
 95696          8518
@@ -263,6 +308,7 @@ Let us check the suppliers located in zip code 95691 and how many purchases are 
 ```python
 df.loc[df["Supplier Zip Code"] == '95691', "Supplier Name"].value_counts()
 
+# Output
 Grainger Industrial Supply                   9441
 MMG Technology Group Inc                      310
 Paper Distributors Inc                        219
@@ -284,6 +330,7 @@ Let's go a bit deeper and see the Acquisition Methods used to purchase from Grai
 ```python
 df.loc[df["Supplier Name"] == "Grainger Industrial Supply", "Acquisition Method"].value_counts()
 
+# Output
 WSCA/Coop                                     9267
 Informal Competitive                           105
 Fair and Reasonable                             62
@@ -299,9 +346,9 @@ Name: Acquisition Method, dtype: int64
 
 ### What are the top UNSPSC categories? 
 
-Assumptions: 
-1. I assume that "UNSPSC categories" corresponds to the "Family Title" column 
-2. Since it is not explicitly mentioned, I assumed that "top" refers to the highest number of purchases instead of total amount.
+>**Assumptions**: 
+>1. I assume that "UNSPSC categories" corresponds to the "Family Title" column 
+>2. Since it is not explicitly mentioned, I assumed that "top" refers to the highest number of purchases instead of total amount.
 
 With these assumption, the top 10 UNSPSC categories by number of purchases are
 ```python
@@ -310,6 +357,7 @@ top_unspsc = df.groupby("Family Title", as_index=False)\
     .sort_values(["count", "total_spend"], ascending=False)
 top_unspsc.head(10)
 
+# Output
 	Family Title	                                    count	total_spend
 265	Office machines and their supplies and accesso...   16479	$88,940,549
 150	Fuels                                               14599	$288,534,768
@@ -326,3 +374,7 @@ top_unspsc.head(10)
 ### If you could spend another day cleaning up the data to make it more useful what might you do?
 
 ### If you could find another data set that would complement this one to help answer the above or similar questions, what dataset might be ideal?
+
+### Future work
+
+- Fit a variety of probability distributions to the price column, and select the best fit
