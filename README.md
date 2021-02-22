@@ -156,7 +156,8 @@ df.loc[df["Unit Price"].notna(), ["Item Name", "Unit Price Numeric"]]\
 <center><img src="img/top-10-expensive.png" align="middle" style="width: 200px; height: 200px" /></center><br>
 --->
 
-Most of these purchases originated from the Department of Health Care Services.
+Most of these purchases originated from the Department of Health Care Services, 
+and the alpha-numeric values in the *Item Name* column seem to be (by Googling them) contract numbers under which the purchase is done.
 
 Two things become obvious from the following price distribution
 
