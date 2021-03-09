@@ -224,7 +224,7 @@ total_price_hist = df.loc[(~expensive_items) & (~invalid_item_price), "Total Pri
 total_price_hist.set_xlabel("Total Price ($)")
 ```
 
-<center><img src="img/price-hist.png" align="middle" style="width: 300px; height: 200px" /></center><br>
+<center><img src="img/price-hist.png" align="middle" /></center><br>
 
 About half of the purchases are cheaper than $5000 dollars, and the total prices of about 90\% of the purchases are less than $100,000.
 
