@@ -95,7 +95,7 @@ spend_by_aq_method = df.groupby("Acquisition Method", as_index=False)\
 spend_by_aq_method.plot.bar(x="Acquisition Method", y="total_spend")
 ```
 
-<center><img src="img/spend-by-aq-method.png" align="middle" style="width: 60%; height: 400px" /></center><br>
+<center><img src="img/spend-by-aq-method.png" align="middle" /></center>
 
 The above plot shows most of the purchases are made using one of the *Informal Competitive*, *Services are specifically exempt by statute*, *Formal Competitive*, or *Services are specifically exempt by policy* acquisition methods.
 
@@ -224,7 +224,7 @@ total_price_hist = df.loc[(~expensive_items) & (~invalid_item_price), "Total Pri
 total_price_hist.set_xlabel("Total Price ($)")
 ```
 
-<center><img src="img/price-hist.png" align="middle" /></center><br>
+<center><img src="img/price-hist.png" align="middle" /></center>
 
 About half of the purchases are cheaper than $5000 dollars, and the total prices of about 90\% of the purchases are less than $100,000.
 
@@ -256,7 +256,7 @@ valid_price = df["Total Price Numeric"] >= 0
 
 spend_trend = df[valid_price].groupby("Creation Year", as_index=False).agg(Spend=("Total Price Numeric", "sum"))
 ```
-<center><img src="img/spend-by-year.png" align="middle" style="width: 300px; height: 200px" /></center><br>
+<center><img src="img/spend-by-year.png" align="middle" /></center>
 
 In general, the spending trend over the years has been growing. The spike in 2013 is the result of a few high-dollar spends whose actual purchase date backdates the creation date.
 
